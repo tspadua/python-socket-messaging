@@ -1,12 +1,12 @@
 import socket
 
-code = "15"
+code = "15000"
 n = "6000"
 
 message = code + "&" + n
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-  s.connect(("127.0.1.1", 5002))
+  s.connect(("127.0.1.1", 50002))
   print(s)
   s.sendall(bytes(message, encoding='utf-8'))
 

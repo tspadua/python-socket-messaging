@@ -1,10 +1,10 @@
 import socket
 import sympy
-import concurrent.futures
+from _thread import *
 
 from this import d
 
-def calculatePrime(code, n):
+def calculate_primes(code, n):
     i = 0
     prime_count_after = 0
     prime_count_before = 0
@@ -12,7 +12,7 @@ def calculatePrime(code, n):
     prime_to_find_after = code
     prime_to_find_before = code
 
-    while (prime_count_after < n and prime_count_before < n):
+    while (prime_count_after < n or prime_count_before < n):
         i+=1
         current_sum = code+i
         current_sub = code-i
@@ -22,31 +22,37 @@ def calculatePrime(code, n):
                 prime_to_find_after = current_sum
         if sympy.isprime(current_sub):
             prime_count_before += 1
-            if (prime_count_after == n):
+            if (prime_count_before == n):
                 prime_to_find_before = current_sub
                 
-    return [prime_to_find_before, prime_to_find_after]
+    return prime_to_find_before * prime_to_find_after
+
+def handle_connection_thread(conexao, addr):
+    while True:
+      
+      dados = conexao.recv(1024)
+      if (dados):
+        decoded = dados.decode()
+        print(f"Mensagem recebida: {decoded}")
+
+        inputs = decoded.split("&")
+        print(inputs)
+        if (len(inputs) > 1):
+          code = int(inputs[0])
+          n = int(inputs[1])
+
+          key = str(calculate_primes(code, n))
+          print("KEY " + key)
+          print(conexao)
+          conexao.sendall(bytes(key, encoding='utf-8'))
+
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-  s.bind((socket.gethostname(), 5003))
+  s.bind((socket.gethostname(), 50003))
   print(s)
   s.listen()
-  conexao, addr = s.accept()
-  with conexao:
-    print(f"Processo conectado: {addr}")
-    while True:
-      dados = conexao.recv(1024)
-      if not dados:
-        break
-      decoded = dados.decode()
-      print(f"Mensagem recebida: {decoded}")
-      inputs = decoded.split("&")
-      if (len(inputs) > 1):
-        code = int(inputs[0])
-        n = int(inputs[1])
+  while True:
+    conexao, addr = s.accept()
 
-        primes = calculatePrime(code, n)
-
-        key = str(primes[0]*primes[1])
-    
-      conexao.sendall(bytes(key, encoding='utf-8'))
+    print(f"Cliente conectado: {addr}")
+    start_new_thread(handle_connection_thread, (conexao, addr))
